@@ -1,0 +1,25 @@
+<!doctype html>
+<html>
+<head><title>Parser Test</title></head>
+<body>
+<pre id="log"></pre>
+<script type="module">
+import { loadConllu } from './js/conllu.js';
+
+const log = (msg) => {
+  document.getElementById('log').textContent += msg + '\n';
+};
+
+(async () => {
+  const splits = { train: './data/qpm_philotis-ud-train.conllu', dev: './data/qpm_philotis-ud-dev.conllu', test: './data/qpm_philotis-ud-test.conllu' };
+  let total = 0;
+  for (const [name, url] of Object.entries(splits)) {
+    const sents = await loadConllu(url, name);
+    log(`${name}: ${sents.length} sentences`);
+    total += sents.length;
+  }
+  log(`Total: ${total} sentences`);
+})();
+</script>
+</body>
+</html>

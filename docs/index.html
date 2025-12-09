@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UD Pomak Viewer</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <h1>Pomak UD Viewer</h1>
+      <p class="subtitle">Explore the Pomak Universal Dependencies corpus (CC BY-NC-SA 4.0)</p>
+    </div>
+    <div class="links">
+      <a href="https://universaldependencies.org/" target="_blank" rel="noreferrer">UD</a>
+      <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" rel="noreferrer">License</a>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="controls">
+      <section>
+        <h2>Corpus</h2>
+        <div class="section-content">
+        <div class="field">
+          <label><input type="checkbox" id="split-train" checked> Train</label>
+          <label><input type="checkbox" id="split-dev" checked> Dev</label>
+          <label><input type="checkbox" id="split-test" checked> Test</label>
+        </div>
+        <button id="load-btn">Load corpus</button>
+        <div id="load-status" class="status">Not loaded</div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="collapsed">Search</h2>
+        <div class="section-content collapsed">
+        <div class="field">
+          <label for="search-input">Query (wildcards * ? supported)</label>
+          <input id="search-input" type="text" placeholder="e.g., go* or ž?no">
+        </div>
+        <div class="field inline">
+          <label><input type="radio" name="match-type" value="form" checked> Form</label>
+          <label><input type="radio" name="match-type" value="lemma"> Lemma</label>
+        </div>
+        <div class="field inline">
+          <label><input type="checkbox" id="case-sensitive"> Case sensitive</label>
+          <label><input type="checkbox" id="substring"> Substring mode</label>
+        </div>
+        <div class="field">
+          <label for="upos-filter">UPOS filter</label>
+          <select id="upos-filter" multiple></select>
+        </div>
+        <div class="field">
+          <label for="deprel-filter">Deprel filter</label>
+          <select id="deprel-filter" multiple></select>
+        </div>
+        <div class="field">
+          <label for="feat-key">FEATS key</label>
+          <input id="feat-key" type="text" placeholder="e.g., Case">
+        </div>
+        <div class="field">
+          <label for="feat-val">FEATS value contains</label>
+          <input id="feat-val" type="text" placeholder="e.g., Acc">
+        </div>
+        <div class="field inline">
+          <label>Sentence length</label>
+          <input id="len-min" type="number" min="1" value="1" class="small"> –
+          <input id="len-max" type="number" min="1" value="100" class="small">
+        </div>
+        <div class="field inline">
+          <button id="search-btn">Search</button>
+          <button id="reset-btn" class="secondary">Reset</button>
+        </div>
+        <div id="search-status" class="status"></div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="collapsed">N-grams</h2>
+        <div class="section-content collapsed">
+        <div class="field inline">
+          <label for="ngram-n">n</label>
+          <input id="ngram-n" type="number" min="1" max="5" value="2" class="small">
+          <label for="ngram-top">Top</label>
+          <input id="ngram-top" type="number" min="1" value="30" class="small">
+        </div>
+        <div class="field inline">
+          <label><input type="radio" name="ngram-scope" value="all" checked> All corpus</label>
+          <label><input type="radio" name="ngram-scope" value="results"> Search hits</label>
+        </div>
+        <button id="ngram-btn">Compute n-grams</button>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="collapsed">Collocations</h2>
+        <div class="section-content collapsed">
+        <div class="field">
+          <label for="collocation-target">Target token/lemma</label>
+          <input id="collocation-target" type="text" placeholder="e.g., go">
+        </div>
+        <div class="field inline">
+          <label for="collocation-window">Window</label>
+          <input id="collocation-window" type="number" min="1" value="2" class="small">
+          <label for="collocation-top">Top</label>
+          <input id="collocation-top" type="number" min="1" value="30" class="small">
+        </div>
+        <div class="field">
+          <label for="collocation-measure">Measure</label>
+          <select id="collocation-measure">
+            <option value="pmi">PMI</option>
+            <option value="tscore">t-score</option>
+          </select>
+        </div>
+        <button id="collocation-btn">Compute collocations</button>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="collapsed">Charts</h2>
+        <div class="section-content collapsed">
+        <button id="chart-pos-btn">POS frequencies</button>
+        <button id="chart-lemma-btn" class="secondary">Top lemmas</button>
+        <button id="chart-form-btn" class="secondary">Top forms</button>
+        </div>
+      </section>
+    </aside>
+
+    <section class="content">
+      <div class="tabs">
+        <button class="tab active" data-tab="results">Results</button>
+        <button class="tab" data-tab="ngrams">N-grams</button>
+        <button class="tab" data-tab="collocations">Collocations</button>
+        <button class="tab" data-tab="charts">Charts</button>
+        <button class="tab" data-tab="deps">Dependency</button>
+      </div>
+
+      <div id="tab-results" class="tab-panel active">
+        <div class="panel-header">
+          <div id="result-count"></div>
+          <div class="pagination">
+            <button id="prev-page" class="secondary">Prev</button>
+            <span id="page-info"></span>
+            <button id="next-page" class="secondary">Next</button>
+          </div>
+        </div>
+        <div id="results" class="results"></div>
+      </div>
+
+      <div id="tab-ngrams" class="tab-panel">
+        <div id="ngrams-output" class="table"></div>
+      </div>
+
+      <div id="tab-collocations" class="tab-panel">
+        <div id="collocations-output" class="table"></div>
+      </div>
+
+      <div id="tab-charts" class="tab-panel">
+        <canvas id="chart-canvas" width="900" height="400"></canvas>
+        <div id="chart-caption" class="status"></div>
+      </div>
+
+      <div id="tab-deps" class="tab-panel">
+        <p>Select a sentence from search results to view dependencies.</p>
+        <svg id="dep-svg" width="900" height="260"></svg>
+        <div id="dep-text" class="status"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>Data: Pomak UD (CC BY-NC-SA 4.0). This viewer runs entirely client-side.</span>
+    <a href="https://github.com/achimrabus/UD_Pomak-Philotis" target="_blank" rel="noreferrer">Repository</a>
+  </footer>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
