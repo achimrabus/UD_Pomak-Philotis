@@ -263,10 +263,37 @@ function renderResults() {
     const div = document.createElement('div');
     div.className = 'result-sentence';
     div.dataset.sid = hit.sid;
-    const tokensHtml = sent.tokens
-      .map((tok, idx) => `<span class="token ${hit.matches.includes(idx) ? 'match' : ''}">${escapeHtml(tok.form)}</span>`)
-      .join(' ');
-    div.innerHTML = `<div>${tokensHtml}</div><div class="meta">${sent.id} • ${sent.split} • ${sent.tokens.length} tokens</div>`;
+    
+    // Render tokens with tags
+    const tokensDiv = document.createElement('div');
+    tokensDiv.className = 'tokens-view';
+    sent.tokens.forEach((tok, idx) => {
+      const tokenSpan = document.createElement('span');
+      tokenSpan.className = `token-group ${hit.matches.includes(idx) ? 'match' : ''}`;
+      
+      const form = document.createElement('span');
+      form.className = 'token-form';
+      form.textContent = tok.form;
+      tokenSpan.appendChild(form);
+      
+      // Add POS tag
+      if (tok.upos) {
+        const posSpan = document.createElement('span');
+        posSpan.className = 'token-tag upos';
+        posSpan.textContent = tok.upos;
+        tokenSpan.appendChild(posSpan);
+      }
+      
+      tokensDiv.appendChild(tokenSpan);
+    });
+    div.appendChild(tokensDiv);
+    
+    // Add metadata
+    const metaDiv = document.createElement('div');
+    metaDiv.className = 'meta';
+    metaDiv.textContent = `${sent.id} • ${sent.split} • ${sent.tokens.length} tokens`;
+    div.appendChild(metaDiv);
+    
     div.addEventListener('click', () => renderDependencies(sent));
     els.results.appendChild(div);
   });
@@ -380,6 +407,13 @@ function drawChart(kind) {
     console.log('No context');
     return;
   }
+  
+  // Switch to Charts tab
+  document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
+  document.querySelector('[data-tab="charts"]').classList.add('active');
+  document.getElementById('tab-charts').classList.add('active');
+  
   ctx.clearRect(0, 0, els.chartCanvas.width, els.chartCanvas.height);
 
   const entries = selectTopCounts(kind, state.index);
@@ -417,12 +451,19 @@ function selectTopCounts(kind, index) {
   else if (kind === 'form') sourceMap = index.formCounts;
   
   if (!sourceMap || sourceMap.size === 0) {
-    console.log(`selectTopCounts(${kind}): no data in sourceMap`);
+    console.log(`selectTopCounts(${kind}): sourceMap missing or empty`);
+    console.log(`Available maps:`, {
+      upos: index.uposCounts?.size,
+      lemma: index.lemmaCounts?.size,
+      form: index.formCounts?.size,
+    });
     return [];
   }
+  
   const entries = Array.from(sourceMap.entries());
-  console.log(`selectTopCounts(${kind}): ${entries.length} items, top 3:`, entries.slice(0, 3));
-  return entries.sort((a, b) => b[1] - a[1]).slice(0, limit);
+  const sorted = entries.sort((a, b) => b[1] - a[1]).slice(0, limit);
+  console.log(`selectTopCounts(${kind}): ${sorted.length} entries. Top 3:`, sorted.slice(0, 3));
+  return sorted;
 }
 
 function renderDependencies(sentence) {
